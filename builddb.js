@@ -17,7 +17,7 @@ const client = new pg.Client(process.env.DATABASE_URL);
 client.connect();
 client.on('error', err => console.error(err));
 
-function start() => {
+function start(){
   client.query(`
   DROP TABLE IF EXISTS users;
   DROP TABLE IF EXISTS cities;
