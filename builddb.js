@@ -19,8 +19,8 @@ client.on('error', err => console.error(err));
 
 function start(){
   client.query(`
-  DROP TABLE IF EXISTS users;
   DROP TABLE IF EXISTS cities;
+  DROP TABLE IF EXISTS users;
 
   CREATE TABLE users (
     id SERIAL PRIMARY KEY,
