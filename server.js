@@ -85,7 +85,7 @@ function getUserAlias(req, res) {
         //Insert user into table.
         insertUser(username).then(favResult =>{
           let user_id;
-          res.send({user_id:user_id,username:username,faveCities:favResult});
+          res.send({user_id:user_id,username:username,faveCities:[]});
         });
       } else {
         //Query for user's favorites
@@ -107,7 +107,7 @@ function insertUser(username){
   const values = [username];
   return client.query(SQL, values)
     .then(result => {
-      const user_id = result.rows[0].id;
+      const user_id = result.rows[0];
       return user_id;
     }).catch(error => console.log('-------------insertUser',error));
 }
