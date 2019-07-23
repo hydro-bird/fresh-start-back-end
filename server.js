@@ -76,7 +76,6 @@ function getCityData(req, res) {
 // ELSE IF !EXIST -> Add user to User table
 function getUserAlias(req, res) {
   const username = req.query.email;
-  console.log('username',username);
   const SQL = 'SELECT id FROM users WHERE user_email=$1;';
   const values = [username];
   let favCities = [];
@@ -85,10 +84,11 @@ function getUserAlias(req, res) {
 
       if (result.rowCount === 0) { //User does not exist in table
         //Insert user into table.
-        insertUser(username).then(favResult =>{
-          let user_id;
-          res.send({user_id:user_id,username:username,faveCities:[]});
-        });
+        insertUser(username).then(id =>{
+
+          console.log('-------------------------------this is the id I want',id);
+          res.send({user_id:id,username:username,faveCities:[]});
+        }) .catch(error => console.log('---------------------- NO',error));
       } else {
         //Query for user's favorites
         const user_id = result.rows[0].id;
@@ -105,12 +105,13 @@ function getUserAlias(req, res) {
 }
 
 function insertUser(username){
-  const SQL = 'INSERT INTO users (user_email) VALUES ($1);';
+  const SQL = 'INSERT INTO users (user_email) VALUES ($1) RETURNING id;';
   const values = [username];
   return client.query(SQL, values)
     .then(result => {
       const user_id = result.rows[0];
-      return user_id;
+      console.log('----------------------------------userid', user_id);
+      return user_id.id;
     }).catch(error => console.log('-------------insertUser',error));
 }
 function getFavorites(user_id){
@@ -124,12 +125,18 @@ function getFavorites(user_id){
 }
 
 function addCity(req, res) {
+  const city_name = req.body.city_name;
+  const geoname_id = req.body.geoname_id;
+  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2);';
+  const values = [city_name, geoname_id];
 
-  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES';
-  const values = req.query;
-
-
+  return client.query(SQL, values)
+    .then(result => {
+      console.log('looking at adding Favorites',result.rows);
+      return result.rows;
+    }).catch(error => console.log('-------------favorites',error));
 }
+
 
 function removeCity(req, res) {
 
