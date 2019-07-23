@@ -19,9 +19,10 @@ client.on('error', err => console.error(err));
 
 function start(){
   client.query(`
+  DROP TABLE IF EXISTS favorites;
   DROP TABLE IF EXISTS cities;
   DROP TABLE IF EXISTS users;
-
+  
   CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     user_email VARCHAR(20)
