@@ -22,11 +22,11 @@ client.on('error', err => console.error(err));
 
 // API Routes
 app.get('/search', getCityData);
-app.get('/user', getUserAlias)
+app.get('/user', getUserAlias);
 // app.put('/favorites', addFavoritesDb)
 
 //Superagent call to Teleport API to receive city information.
-//TODO: check against SQL db? 
+//TODO: check against SQL db?
 function getCityData(req, res) {
   let cityObject = {};
   let city = req.query.city.toUpperCase();
@@ -58,30 +58,61 @@ function getCityData(req, res) {
               console.log(cityObject); //TEST
               //res.send(result.body);
               res.send(cityObject);
-            })
-        })
+            });
+        });
     });
 }
 
-//TODO: Check if user exists in SQL db User table, 
-// IF EXISTS -> send back favorites city data 
-// ELSE IF !EXIST -> Add user to User table 
+//TODO: Check if user exists in SQL db User table,
+// IF EXISTS -> send back favorites city data
+// ELSE IF !EXIST -> Add user to User table
 function getUserAlias(req, res) {
-  //const SQL = `INSERT QUERY HERE`;
-  //const username = req.query;
-  //let favCities = {}
-
-  client.query(SQL, username)
+  const username = req.query.email;
+  console.log('username',username);
+  const SQL = 'SELECT id FROM users WHERE user_email=$1;';
+  const values = [username];
+  let favCities = [];
+  client.query(SQL, values)
     .then(result => {
-      if (result.rowCount > 0) { //User does not exist in table
+
+      if (result.rowCount === 0) { //User does not exist in table
         //Insert user into table.
+        insertUser(username).then(favResult =>{
+          let user_id;
+          res.send({user_id:user_id,username:username,faveCities:favResult});
+        });
       } else {
         //Query for user's favorites
+        const user_id = result.rows[0].id;
+        getFavorites(result.rows[0].id).then(favResult =>{
+          res.send({user_id:user_id,username:username,faveCities:favResult});
+        });
+        console.log('return val',favCities);
         //Add to favCities Object
       }
+
     })
-    .catch(error => handleError(error));
-  res.send(favCities);
+    .catch(error => console.log('----------------------',error));
+
+}
+
+function insertUser(username){
+  const SQL = 'INSERT INTO users (user_email) VALUES ($1);';
+  const values = [username];
+  return client.query(SQL, values)
+    .then(result => {
+      const user_id = result.rows[0].id;
+      return user_id;
+    }).catch(error => console.log('-------------insertUser',error));
+}
+function getFavorites(user_id){
+  const SQL = 'SELECT * FROM cities INNER JOIN favorites ON user_id=$1; ';
+  const values = [user_id];
+  return client.query(SQL, values)
+    .then(result => {
+      console.log('looking at favorites',result.rows);
+      return result.rows;
+    }).catch(error => console.log('-------------favorites',error));
 }
 
 // Make sure the server is listening for request
