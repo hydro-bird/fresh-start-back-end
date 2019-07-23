@@ -22,14 +22,21 @@ client.on('error', err => console.error(err));
 
 // API Routes
 app.get('/search', getCityData);
+<<<<<<< HEAD
+app.get('/user', getUserAlias);
+=======
 //Superagent call to Teleport API to receive city information.
 //TODO: check against SQL db?
 app.get('/user', getUserAlias)
+>>>>>>> 2cd79cb5abc31b297efc714a0a5f1fe9b17ead72
 // app.put('/addfavorites', addCity)
 // app.put('/removefavorites', removeCity)
 
 //Superagent call to Teleport API to receive city information.
+<<<<<<< HEAD
+=======
 
+>>>>>>> 2cd79cb5abc31b297efc714a0a5f1fe9b17ead72
 function getCityData(req, res) {
   let cityObject = {};
   let city = req.query.city.toUpperCase();
@@ -58,17 +65,17 @@ function getCityData(req, res) {
           cityObject.longitude = result.body.location.latlon.longitude;
 
           //third API call to get Urban Area details for city and add to cityObject
-        if (cityObject.urbanAreaUrl) {
+          if (cityObject.urbanAreaUrl) {
             superagent.get(cityObject.urbanAreaUrl + 'scores')
               .then(result => {
                 cityObject.categories = result.body.categories;
                 console.log(cityObject); //TEST
                 res.send(cityObject);
-              })
+              });
           } else {
             res.send(cityObject);
           }
-        })
+        });
     });
 }
 
@@ -88,7 +95,7 @@ function getUserAlias(req, res) {
         //Insert user into table.
         insertUser(username).then(favResult =>{
           let user_id;
-          res.send({user_id:user_id,username:username,faveCities:favResult});
+          res.send({user_id:user_id,username:username,faveCities:[]});
         });
       } else {
         //Query for user's favorites
@@ -110,7 +117,7 @@ function insertUser(username){
   const values = [username];
   return client.query(SQL, values)
     .then(result => {
-      const user_id = result.rows[0].id;
+      const user_id = result.rows[0];
       return user_id;
     }).catch(error => console.log('-------------insertUser',error));
 }
@@ -125,7 +132,7 @@ function getFavorites(user_id){
 }
 
 function addCity(req, res) {
-  const SQL = `INSERT QUERY HERE`;
+  const SQL = 'INSERT QUERY HERE';
   const values = req.query;
 
 

@@ -41,8 +41,8 @@ function start(){
     FOREIGN KEY (city_id) REFERENCES cities (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
   )
-  `)
+  `);
   console.log('Build complete');
- }
+}
 
 start();
