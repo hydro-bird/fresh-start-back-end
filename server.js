@@ -63,9 +63,25 @@ function getCityData(req, res) {
     });
 }
 
-//TODO: Add user to SQL db User table
+//TODO: Check if user exists in SQL db User table, 
+// IF EXISTS -> send back favorites city data 
+// ELSE IF !EXIST -> Add user to User table 
 function getUserAlias(req, res) {
-  //use SQL query to insert/add/update User table with current user. 
+  //const SQL = `INSERT QUERY HERE`;
+  //const username = req.query;
+  //let favCities = {}
+
+  client.query(SQL, username)
+    .then(result => {
+      if (result.rowCount > 0) { //User does not exist in table
+        //Insert user into table.
+      } else {
+        //Query for user's favorites
+        //Add to favCities Object
+      }
+    })
+    .catch(error => handleError(error));
+  res.send(favCities);
 }
 
 // Make sure the server is listening for request
