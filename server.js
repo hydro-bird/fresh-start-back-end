@@ -22,21 +22,13 @@ client.on('error', err => console.error(err));
 
 // API Routes
 app.get('/search', getCityData);
-<<<<<<< HEAD
-app.get('/user', getUserAlias);
-=======
 //Superagent call to Teleport API to receive city information.
 //TODO: check against SQL db?
-app.get('/user', getUserAlias)
->>>>>>> 2cd79cb5abc31b297efc714a0a5f1fe9b17ead72
+app.get('/user', getUserAlias);
 // app.put('/addfavorites', addCity)
 // app.put('/removefavorites', removeCity)
 
 //Superagent call to Teleport API to receive city information.
-<<<<<<< HEAD
-=======
-
->>>>>>> 2cd79cb5abc31b297efc714a0a5f1fe9b17ead72
 function getCityData(req, res) {
   let cityObject = {};
   let city = req.query.city.toUpperCase();
@@ -132,7 +124,8 @@ function getFavorites(user_id){
 }
 
 function addCity(req, res) {
-  const SQL = 'INSERT QUERY HERE';
+
+  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES';
   const values = req.query;
 
 
