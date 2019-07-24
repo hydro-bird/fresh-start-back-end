@@ -101,9 +101,9 @@ function getUserAlias(req, res) {
 
     })
     .catch(error => console.log('----------------------',error));
-
 }
 
+//This function will check for user in the database or create user in the database
 function insertUser(username){
   const SQL = 'INSERT INTO users (user_email) VALUES ($1) RETURNING id;';
   const values = [username];
@@ -113,6 +113,8 @@ function insertUser(username){
       return user_id.id;
     }).catch(error => console.log('-------------insertUser',error));
 }
+
+//This function will get the favorites for the user
 function getFavorites(user_id){
   const SQL = 'SELECT * FROM cities INNER JOIN favorites ON user_id=$1; ';
   const values = [user_id];
@@ -123,6 +125,7 @@ function getFavorites(user_id){
     }).catch(error => console.log('-------------favorites',error));
 }
 
+//This function will add a location search to the user's favorites
 function addCity(req, res) {
   const user_id = req.query.user_id;
   const city_name = req.query.city_name;
@@ -141,7 +144,20 @@ function addCity(req, res) {
     }).catch(error => console.log('-------------favorites',error));
 }
 
+//This function will remove a locaction search from the user's favorites
+function removeCity(req, res) {
+  const join_id = req.query.join_id;
+  const SQL = 'DELETE FROM favorites WHERE join_id=$1;';
+  const values = [join_id];
+  return client.query(SQL, values).then(result => {
+    console.log('removing city');
+    res.send('Success REMOVED');
+    return result;
+  }).catch(error => console.log('-------------Delete Route',error));
 
+}
+
+//This is function will run if the locaction search is not in the database. It will add the locaction
 function cityNotFoundDB(user_id,city_name,geoname_id){
   const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id;';
   let values = [city_name, geoname_id];
@@ -158,6 +174,7 @@ function cityNotFoundDB(user_id,city_name,geoname_id){
     }).catch(error => console.log('-------------favorites 1st',error));
 }
 
+//This funtion will take a city that has already been added to the database under another user and it will add this search to the favorites of the current user.
 function citYFoundDB(user_id,results){
   const SQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
   const values = [user_id,results[0].id];
@@ -170,17 +187,7 @@ function citYFoundDB(user_id,results){
     }).catch(error => console.log('-------------City found 1st',error));
 }
 
-function removeCity(req, res) {
-  const join_id = req.query.join_id;
-  const SQL = 'DELETE FROM favorites WHERE join_id=$1;';
-  const values = [join_id];
-  return client.query(SQL, values).then(result => {
-    console.log('removing city');
-    res.send('Success REMOVED');
-    return result;
-  }).catch(error => console.log('-------------Delete Route',error));
 
-}
 
 // Make sure the server is listening for request
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
