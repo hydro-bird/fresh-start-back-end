@@ -27,7 +27,7 @@ app.get('/search', getCityData);
 //TODO: check against SQL db?
 app.get('/user', getUserAlias);
 app.put('/addfavorites', addCity);
-// app.put('/removefavorites', removeCity)
+app.put('/removefavorites', removeCity);
 
 //Superagent call to Teleport API to receive city information.
 function getCityData(req, res) {
@@ -171,6 +171,14 @@ function citYFoundDB(user_id,results){
 }
 
 function removeCity(req, res) {
+  const join_id = req.query.join_id;
+  const SQL = 'DELETE FROM favorites WHERE join_id=$1;';
+  const values = [join_id];
+  return client.query(SQL, values).then(result => {
+    console.log('removing city');
+    res.send('Success REMOVED');
+    return result;
+  }).catch(error => console.log('-------------Delete Route',error));
 
 }
 
