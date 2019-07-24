@@ -118,13 +118,6 @@ function getFavorites(user_id){
   const values = [user_id];
   return client.query(SQL, values)
     .then(result => {
-      result.rows.forEach((val, index) => {
-        console.log('helloooo', val);
-        if(val.join_id < 1){
-          result.rows.splice(index);
-          console.log('-----------------',val.join_id);
-        }
-      });
       console.log('getFavorites',result.rows);
       return result.rows;
     }).catch(error => console.log('-------------favorites',error));
@@ -134,6 +127,22 @@ function addCity(req, res) {
   const user_id = req.query.user_id;
   const city_name = req.query.city_name;
   const geoname_id = req.query.geoname_id;
+  let SQL = 'SELECT * FROM cities WHERE city_geocode_id=$1;';
+  client.query(SQL, [geoname_id])
+    .then(result => {
+      if(result.rowCount === 0){
+        console.log(result.rows);
+        cityNotFoundDB(user_id,city_name,geoname_id);
+        res.send('Sucess!!');
+      }else{
+        citYFoundDB(user_id,result.rows);
+        res.send(result.rows);
+      }
+    }).catch(error => console.log('-------------favorites',error));
+}
+
+
+function cityNotFoundDB(user_id,city_name,geoname_id){
   const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id;';
   let values = [city_name, geoname_id];
   const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
@@ -144,12 +153,22 @@ function addCity(req, res) {
       values = [user_id,id];
       client.query(favSQL,values).then(result =>{
         console.log(result);
-        res.send('Sucess!!');
         return result;
       }).catch(error => console.log('-------------favorites',error));
     }).catch(error => console.log('-------------favorites 1st',error));
 }
 
+function citYFoundDB(user_id,results){
+  const SQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
+  const values = [user_id,results[0].id];
+  console.log('--------------------------user_id', user_id);
+  console.log('--------------------TRYING',results[0]);
+  return client.query(SQL, values)
+    .then(result => {
+      console.log(result);
+      return result;
+    }).catch(error => console.log('-------------City found 1st',error));
+}
 
 function removeCity(req, res) {
 
