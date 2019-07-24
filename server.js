@@ -124,7 +124,7 @@ function getFavorites(user_id){
           console.log('-----------------',val.join_id);
         }
       });
-      console.log('looking at favorites',result.rows);
+      console.log('getFavorites',result.rows);
       return result.rows;
     }).catch(error => console.log('-------------favorites',error));
 }
@@ -137,16 +137,16 @@ function addCity(req, res) {
   let values = [city_name, geoname_id];
   const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
   return client.query(SQL, values)
-    .then(id => {
-      values = [user_id,id];
+    .then(findId => {
+      const id = findId.rows[0].id;
       console.log('looking at adding Favorites',id);
-      res.send({city_id:id,city_name:city_name});
-      return id;
-    }).then(client.query(favSQL,values).then(result =>{
-      res.send(result.body);
-      return result.body;
-    })).catch(error => console.log('-------------favorites',error));
-
+      values = [user_id,id];
+      client.query(favSQL,values).then(result =>{
+        console.log(result);
+        res.send('Sucess!!');
+        return result;
+      }).catch(error => console.log('-------------favorites',error));
+    }).catch(error => console.log('-------------favorites 1st',error));
 }
 
 
