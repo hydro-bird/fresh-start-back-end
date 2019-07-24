@@ -5,6 +5,7 @@ const express = require('express');
 const superagent = require('superagent');
 const pg = require('pg');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 
 // Load environment variables from .env file
 require('dotenv').config();
@@ -12,7 +13,7 @@ require('dotenv').config();
 // Application Setup
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+app.use(bodyParser.json());
 app.use(cors());
 
 // Database Setup
@@ -116,15 +117,22 @@ function getFavorites(user_id){
   const values = [user_id];
   return client.query(SQL, values)
     .then(result => {
+      result.rows.forEach((val, index) => {
+        console.log('helloooo', val);
+        if(val.join_id > 1){
+          result.rows.splice(index);
+          console.log('-----------------',val.join_id);
+        }
+      });
       console.log('looking at favorites',result.rows);
       return result.rows;
     }).catch(error => console.log('-------------favorites',error));
 }
 
 function addCity(req, res) {
-  const user_id = req.query.user_id;
-  const city_name = req.query.city_name;
-  const geoname_id = req.query.geoname_id;
+  const user_id = req.body.user_id;
+  const city_name = req.body.city_name;
+  const geoname_id = req.body.geoname_id;
   const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id;';
   let values = [city_name, geoname_id];
   const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
