@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS cities;
 
@@ -13,7 +14,7 @@ CREATE TABLE cities(
 );
 
 CREATE TABLE favorites (
-  id SERIAL PRIMARY KEY,
+  join_id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL,
   city_id INTEGER NOT NULL,
   FOREIGN KEY (city_id) REFERENCES cities (id),

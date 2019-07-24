@@ -25,7 +25,7 @@ app.get('/search', getCityData);
 //Superagent call to Teleport API to receive city information.
 //TODO: check against SQL db?
 app.get('/user', getUserAlias);
-// app.put('/addfavorites', addCity)
+app.put('/addfavorites', addCity);
 // app.put('/removefavorites', removeCity)
 
 //Superagent call to Teleport API to receive city information.
@@ -85,8 +85,6 @@ function getUserAlias(req, res) {
       if (result.rowCount === 0) { //User does not exist in table
         //Insert user into table.
         insertUser(username).then(id =>{
-
-          console.log('-------------------------------this is the id I want',id);
           res.send({user_id:id,username:username,faveCities:[]});
         }) .catch(error => console.log('---------------------- NO',error));
       } else {
@@ -110,7 +108,6 @@ function insertUser(username){
   return client.query(SQL, values)
     .then(result => {
       const user_id = result.rows[0];
-      console.log('----------------------------------userid', user_id);
       return user_id.id;
     }).catch(error => console.log('-------------insertUser',error));
 }
@@ -125,16 +122,23 @@ function getFavorites(user_id){
 }
 
 function addCity(req, res) {
-  const city_name = req.body.city_name;
-  const geoname_id = req.body.geoname_id;
-  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2);';
-  const values = [city_name, geoname_id];
-
+  const user_id = req.query.user_id;
+  const city_name = req.query.city_name;
+  const geoname_id = req.query.geoname_id;
+  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id;';
+  let values = [city_name, geoname_id];
+  const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
   return client.query(SQL, values)
-    .then(result => {
-      console.log('looking at adding Favorites',result.rows);
-      return result.rows;
-    }).catch(error => console.log('-------------favorites',error));
+    .then(id => {
+      values = [user_id,id];
+      console.log('looking at adding Favorites',id);
+      res.send({city_id:id,city_name:city_name});
+      return id;
+    }).then(client.query(favSQL,values).then(result =>{
+      res.send(result.body);
+      return result.body;
+    })).catch(error => console.log('-------------favorites',error));
+
 }
 
 
