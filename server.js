@@ -130,9 +130,9 @@ function getFavorites(user_id){
 }
 
 function addCity(req, res) {
-  const user_id = req.body.user_id;
-  const city_name = req.body.city_name;
-  const geoname_id = req.body.geoname_id;
+  const user_id = req.query.user_id;
+  const city_name = req.query.city_name;
+  const geoname_id = req.query.geoname_id;
   const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id;';
   let values = [city_name, geoname_id];
   const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
