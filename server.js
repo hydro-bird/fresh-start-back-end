@@ -13,7 +13,7 @@ require('dotenv').config();
 // Application Setup
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
 app.use(cors());
 
 // Database Setup
@@ -145,13 +145,18 @@ function addCity(req, res) {
   const user_id = req.query.user_id;
   const city_name = req.query.city_name;
   const geoname_id = req.query.geoname_id;
+  let addObject = {};
   let SQL = 'SELECT * FROM cities WHERE city_geocode_id=$1;';
   client.query(SQL, [geoname_id])
     .then(result => {
       if(result.rowCount === 0){
         console.log(result.rows);
-        cityNotFoundDB(user_id,city_name,geoname_id);
-        res.send('Sucess!!');
+        cityNotFoundDB(user_id,city_name,geoname_id,res).then(resultsJoin =>{
+          addObject = resultsJoin;
+          // res.send('Sucess!!');
+          console.log(addObject);
+        }).catch(error => console.log('-------------favorites',error));
+
       }else{
         citYFoundDB(user_id,result.rows);
         res.send(result.rows);
@@ -173,18 +178,19 @@ function removeCity(req, res) {
 }
 
 //This is function will run if the locaction search is not in the database. It will add the locaction
-function cityNotFoundDB(user_id,city_name,geoname_id){
-  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id;';
+function cityNotFoundDB(user_id,city_name,geoname_id,res){
+  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id, city_name;';
   let values = [city_name, geoname_id];
-  const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
+  const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2) RETURNING join_id;';
   return client.query(SQL, values)
     .then(findId => {
       const id = findId.rows[0].id;
       console.log('looking at adding Favorites',id);
       values = [user_id,id];
       client.query(favSQL,values).then(result =>{
-        console.log(result);
-        return result;
+        console.log('join_id coming at you--------',result.rows[0].join_id);
+        res.send([result.rows[0], findId.rows[0]]);
+        return result.rows[0].join_id;
       }).catch(error => console.log('-------------favorites',error));
     }).catch(error => console.log('-------------favorites 1st',error));
 }
