@@ -5,6 +5,7 @@ const express = require('express');
 const superagent = require('superagent');
 const pg = require('pg');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 
 // Load environment variables from .env file
 require('dotenv').config();
@@ -12,7 +13,7 @@ require('dotenv').config();
 // Application Setup
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+app.use(bodyParser.json());
 app.use(cors());
 
 // Database Setup
@@ -23,9 +24,9 @@ client.on('error', err => console.error(err));
 // API Routes
 app.get('/search', getCityData);
 app.get('/user', getUserAlias);
-app.get('/map', getMap);
-// app.put('/addfavorites', addCity)
-// app.put('/removefavorites', removeCity)
+app.put('/addfavorites', addCity);
+app.put('/removefavorites', removeCity);
+
 
 function getMap(req, res) {
   const latitude = req.query.latitude;
@@ -99,63 +100,109 @@ function getUserAlias(req, res) {
 
       if (result.rowCount === 0) { //User does not exist in table
         //Insert user into table.
-        insertUser(username).then(id => {
-
-          console.log('-------------------------------this is the id I want', id);
-          res.send({ user_id: id, username: username, faveCities: [] });
-        }).catch(error => console.log('---------------------- NO', error));
+        insertUser(username).then(id =>{
+          res.send({user_id:id,username:username,faveCities:[]});
+        }) .catch(error => console.log('---------------------- NO',error));
       } else {
         //Query for user's favorites
         const user_id = result.rows[0].id;
-        getFavorites(result.rows[0].id).then(favResult => {
-          res.send({ user_id: user_id, username: username, faveCities: favResult });
+        getFavorites(result.rows[0].id).then(favResult =>{
+          console.log(favCities);
+          res.send({user_id:user_id,username:username,faveCities:favResult});
         });
         console.log('return val', favCities);
         //Add to favCities Object
       }
 
     })
-    .catch(error => console.log('----------------------', error));
-
+    .catch(error => console.log('----------------------',error));
 }
 
-function insertUser(username) {
+//This function will check for user in the database or create user in the database
+function insertUser(username){
   const SQL = 'INSERT INTO users (user_email) VALUES ($1) RETURNING id;';
   const values = [username];
   return client.query(SQL, values)
     .then(result => {
       const user_id = result.rows[0];
-      console.log('----------------------------------userid', user_id);
       return user_id.id;
     }).catch(error => console.log('-------------insertUser', error));
 }
-function getFavorites(user_id) {
+
+//This function will get the favorites for the user
+function getFavorites(user_id){
   const SQL = 'SELECT * FROM cities INNER JOIN favorites ON user_id=$1; ';
   const values = [user_id];
   return client.query(SQL, values)
     .then(result => {
-      console.log('looking at favorites', result.rows);
+      console.log('getFavorites',result.rows);
       return result.rows;
     }).catch(error => console.log('-------------favorites', error));
 }
 
+//This function will add a location search to the user's favorites
 function addCity(req, res) {
-  const city_name = req.body.city_name;
-  const geoname_id = req.body.geoname_id;
-  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2);';
-  const values = [city_name, geoname_id];
+  const user_id = req.query.user_id;
+  const city_name = req.query.city_name;
+  const geoname_id = req.query.geoname_id;
+  let SQL = 'SELECT * FROM cities WHERE city_geocode_id=$1;';
+  client.query(SQL, [geoname_id])
+    .then(result => {
+      if(result.rowCount === 0){
+        console.log(result.rows);
+        cityNotFoundDB(user_id,city_name,geoname_id);
+        res.send('Sucess!!');
+      }else{
+        citYFoundDB(user_id,result.rows);
+        res.send(result.rows);
+      }
+    }).catch(error => console.log('-------------favorites',error));
+}
 
+//This function will remove a locaction search from the user's favorites
+function removeCity(req, res) {
+  const join_id = req.query.join_id;
+  const SQL = 'DELETE FROM favorites WHERE join_id=$1;';
+  const values = [join_id];
+  return client.query(SQL, values).then(result => {
+    console.log('removing city');
+    res.send('Success REMOVED');
+    return result;
+  }).catch(error => console.log('-------------Delete Route',error));
+
+}
+
+//This is function will run if the locaction search is not in the database. It will add the locaction
+function cityNotFoundDB(user_id,city_name,geoname_id){
+  const SQL = 'INSERT INTO cities (city_name,city_geocode_id) VALUES($1,$2) RETURNING id;';
+  let values = [city_name, geoname_id];
+  const favSQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
+  return client.query(SQL, values)
+    .then(findId => {
+      const id = findId.rows[0].id;
+      console.log('looking at adding Favorites',id);
+      values = [user_id,id];
+      client.query(favSQL,values).then(result =>{
+        console.log(result);
+        return result;
+      }).catch(error => console.log('-------------favorites',error));
+    }).catch(error => console.log('-------------favorites 1st',error));
+}
+
+//This funtion will take a city that has already been added to the database under another user and it will add this search to the favorites of the current user.
+function citYFoundDB(user_id,results){
+  const SQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
+  const values = [user_id,results[0].id];
+  console.log('--------------------------user_id', user_id);
+  console.log('--------------------TRYING',results[0]);
   return client.query(SQL, values)
     .then(result => {
-      console.log('looking at adding Favorites', result.rows);
-      return result.rows;
-    }).catch(error => console.log('-------------favorites', error));
+      console.log(result);
+      return result;
+    }).catch(error => console.log('-------------City found 1st',error));
 }
 
 
-function removeCity(req, res) {
-
-}
 
 // Make sure the server is listening for request
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
