@@ -92,6 +92,7 @@ function getUserAlias(req, res) {
         //Query for user's favorites
         const user_id = result.rows[0].id;
         getFavorites(result.rows[0].id).then(favResult =>{
+          console.log(favCities);
           res.send({user_id:user_id,username:username,faveCities:favResult});
         });
         console.log('return val',favCities);
@@ -119,7 +120,7 @@ function getFavorites(user_id){
     .then(result => {
       result.rows.forEach((val, index) => {
         console.log('helloooo', val);
-        if(val.join_id > 1){
+        if(val.join_id < 1){
           result.rows.splice(index);
           console.log('-----------------',val.join_id);
         }
