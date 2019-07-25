@@ -131,7 +131,7 @@ function insertUser(username){
 
 //This function will get the favorites for the user
 function getFavorites(user_id){
-  const SQL = 'SELECT * FROM cities INNER JOIN favorites ON user_id=$1; ';
+  const SQL = 'SELECT * FROM cities INNER JOIN favorites ON city_id=cities.id where user_id=$1; ';
   const values = [user_id];
   return client.query(SQL, values)
     .then(result => {
@@ -153,7 +153,6 @@ function addCity(req, res) {
         console.log(result.rows);
         cityNotFoundDB(user_id,city_name,geoname_id,res).then(resultsJoin =>{
           addObject = resultsJoin;
-          // res.send('Sucess!!');
           console.log(addObject);
         }).catch(error => console.log('-------------favorites',error));
 
