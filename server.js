@@ -142,8 +142,8 @@ function addCity(req, res) {
         }).catch(error => console.log('-------------favorites',error));
 
       }else{
-        citYFoundDB(user_id,result.rows);
-        res.send(result.rows);
+        citYFoundDB(user_id,result.rows, res);
+        //res.send(result.rows);
       }
     }).catch(error => console.log('-------------favorites',error));
 }
@@ -180,14 +180,16 @@ function cityNotFoundDB(user_id,city_name,geoname_id,res){
 }
 
 //This funtion will take a city that has already been added to the database under another user and it will add this search to the favorites of the current user.
-function citYFoundDB(user_id,results){
-  const SQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2);';
+function citYFoundDB(user_id,results,res){
+  const SQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2) RETURNING join_id;';
   const values = [user_id,results[0].id];
   console.log('--------------------------user_id', user_id);
   console.log('--------------------TRYING',results[0]);
   return client.query(SQL, values)
     .then(result => {
-      console.log(result);
+      console.log('found in DB--------------------',results);
+
+      res.send([result.rows[0],results[0]]);
       return result;
     }).catch(error => console.log('-------------City found 1st',error));
 }
