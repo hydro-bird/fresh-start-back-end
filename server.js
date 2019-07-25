@@ -37,16 +37,11 @@ function getMap(req, res) {
 function getCityData(req, res) {
   let cityObject = {};
   let city = req.query.city.toUpperCase();
-  console.log(city); //test user's city query
   //first API call to search for city with user's query input.
   superagent.get(`https://api.teleport.org/api/cities/?search=${city}`)
     .then(result => {
       //add geonameid API url to cityObject
       cityObject.cityUrl = result.body._embedded['city:search-results'][0]._links['city:item'].href;
-
-      //TESTING
-      // console.log('This is the results: ', result.body._embedded['city:search-results'][0]._links['city:item'].href);
-      // console.log(cityObject);
 
       //second API call using geonameid to get city details and add to cityObject
       superagent.get(cityObject.cityUrl)
@@ -70,7 +65,6 @@ function getCityData(req, res) {
             superagent.get(cityObject.urbanAreaUrl + 'scores')
               .then(result => {
                 cityObject.categories = result.body.categories;
-
                 res.send(cityObject);
               });
             console.log(cityObject.urbanAreaUrl + 'images');
@@ -94,7 +88,6 @@ function getUserAlias(req, res) {
   const username = req.query.email;
   const SQL = 'SELECT id FROM users WHERE user_email=$1;';
   const values = [username];
-  let favCities = [];
   client.query(SQL, values)
     .then(result => {
 
@@ -102,20 +95,18 @@ function getUserAlias(req, res) {
         //Insert user into table.
         insertUser(username).then(id =>{
           res.send({user_id:id,username:username,faveCities:[]});
-        }) .catch(error => console.log('---------------------- NO',error));
+        }) .catch(error => console.error('---------------------- NO',error));
       } else {
         //Query for user's favorites
         const user_id = result.rows[0].id;
         getFavorites(result.rows[0].id).then(favResult =>{
-          console.log(favCities);
           res.send({user_id:user_id,username:username,faveCities:favResult});
         });
-        console.log('return val', favCities);
         //Add to favCities Object
       }
 
     })
-    .catch(error => console.log('----------------------',error));
+    .catch(error => console.error('----------------------',error));
 }
 
 //This function will check for user in the database or create user in the database
@@ -126,7 +117,7 @@ function insertUser(username){
     .then(result => {
       const user_id = result.rows[0];
       return user_id.id;
-    }).catch(error => console.log('-------------insertUser', error));
+    }).catch(error => console.error('-------------insertUser',error));
 }
 
 //This function will get the favorites for the user
@@ -135,9 +126,8 @@ function getFavorites(user_id){
   const values = [user_id];
   return client.query(SQL, values)
     .then(result => {
-      console.log('getFavorites',result.rows);
       return result.rows;
-    }).catch(error => console.log('-------------favorites', error));
+    }).catch(error => console.error('-------------favorites',error));
 }
 
 //This function will add a location search to the user's favorites
@@ -145,22 +135,18 @@ function addCity(req, res) {
   const user_id = req.query.user_id;
   const city_name = req.query.city_name;
   const geoname_id = req.query.geoname_id;
-  let addObject = {};
   let SQL = 'SELECT * FROM cities WHERE city_geocode_id=$1;';
   client.query(SQL, [geoname_id])
     .then(result => {
       if(result.rowCount === 0){
-        console.log(result.rows);
         cityNotFoundDB(user_id,city_name,geoname_id,res).then(resultsJoin =>{
-          addObject = resultsJoin;
-          console.log(addObject);
-        }).catch(error => console.log('-------------favorites',error));
-
+          console.log(resultsJoin);
+        }).catch(error => console.error('-------------favorites',error));
       }else{
         citYFoundDB(user_id,result.rows, res);
         //res.send(result.rows);
       }
-    }).catch(error => console.log('-------------favorites',error));
+    }).catch(error => console.error('-------------favorites',error));
 }
 
 //This function will remove a locaction search from the user's favorites
@@ -169,10 +155,9 @@ function removeCity(req, res) {
   const SQL = 'DELETE FROM favorites WHERE join_id=$1;';
   const values = [join_id];
   return client.query(SQL, values).then(result => {
-    console.log('removing city');
     res.send('Success REMOVED');
     return result;
-  }).catch(error => console.log('-------------Delete Route',error));
+  }).catch(error => console.error('-------------Delete Route',error));
 
 }
 
@@ -184,29 +169,26 @@ function cityNotFoundDB(user_id,city_name,geoname_id,res){
   return client.query(SQL, values)
     .then(findId => {
       const id = findId.rows[0].id;
-      console.log('looking at adding Favorites',id);
       values = [user_id,id];
       client.query(favSQL,values).then(result =>{
-        console.log('join_id coming at you--------',result.rows[0].join_id);
         res.send([result.rows[0], findId.rows[0]]);
         return result.rows[0].join_id;
-      }).catch(error => console.log('-------------favorites',error));
-    }).catch(error => console.log('-------------favorites 1st',error));
+      }).catch(error => console.error('-------------favorites',error));
+    }).catch(error => console.error('-------------favorites 1st',error));
 }
 
 //This funtion will take a city that has already been added to the database under another user and it will add this search to the favorites of the current user.
 function citYFoundDB(user_id,results,res){
   const SQL = 'INSERT INTO favorites (user_id,city_id) VALUES ($1,$2) RETURNING join_id;';
   const values = [user_id,results[0].id];
-  console.log('--------------------------user_id', user_id);
-  console.log('--------------------TRYING',results[0]);
+  console.error('--------------------------user_id', user_id);
+  console.error('--------------------TRYING',results[0]);
   return client.query(SQL, values)
     .then(result => {
-      console.log('found in DB--------------------',results);
-
+      console.error('found in DB--------------------',results);
       res.send([result.rows[0],results[0]]);
       return result;
-    }).catch(error => console.log('-------------City found 1st',error));
+    }).catch(error => console.error('-------------City found 1st',error));
 }
 
 
