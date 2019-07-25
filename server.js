@@ -23,11 +23,15 @@ client.on('error', err => console.error(err));
 
 // API Routes
 app.get('/search', getCityData);
-//Superagent call to Teleport API to receive city information.
-//TODO: check against SQL db?
 app.get('/user', getUserAlias);
 app.put('/addfavorites', addCity);
 app.put('/removefavorites', removeCity);
+
+
+function getMap(req, res) {
+  const latitude = req.query.latitude;
+  const longitude = req.query.longitude;
+}
 
 //Superagent call to Teleport API to receive city information.
 function getCityData(req, res) {
@@ -45,6 +49,9 @@ function getCityData(req, res) {
 
           if (result.body._links['city:urban_area']) {
             cityObject.urbanAreaUrl = result.body._links['city:urban_area'].href;
+            // console.log('i am in urban area');
+            // superagent.get(cityObject.)
+            // cityObject.webImage = cityObject.urbanAreaUrl + 'images.photos.image.web';
           }
           cityObject.geoNameId = result.body.geoname_id;
           cityObject.name = result.body.name;
@@ -52,12 +59,20 @@ function getCityData(req, res) {
           cityObject.latitude = result.body.location.latlon.latitude;
           cityObject.longitude = result.body.location.latlon.longitude;
 
+
           //third API call to get Urban Area details for city and add to cityObject
           if (cityObject.urbanAreaUrl) {
             superagent.get(cityObject.urbanAreaUrl + 'scores')
               .then(result => {
                 cityObject.categories = result.body.categories;
                 res.send(cityObject);
+              });
+            console.log(cityObject.urbanAreaUrl + 'images');
+            superagent.get(cityObject.urbanAreaUrl + 'images')
+              .then(result => {
+                cityObject.webImage = result.body.photos[0].image.web;
+                // console.log(result.body.photos[0].image.web);
+                console.log(cityObject); //TEST
               });
           } else {
             res.send(cityObject);
